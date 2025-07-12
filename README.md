@@ -1,6 +1,7 @@
 # azr-table
 
-This template should help get you started developing with Vue 3 in Vite.
+`azr-table` 是一个基于 Vue 和 Element Plus 的可编辑表格组件，并包含一些类似 Excel 的便捷操作
+
 
 ## Recommended IDE Setup
 
