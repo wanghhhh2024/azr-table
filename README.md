@@ -17,6 +17,9 @@
   - 右键复制/粘贴
   - 删除行/区域选中的行
 
+## 截图
+![chrome_jLknYodZcH](https://github.com/user-attachments/assets/0c097997-da5e-4445-9426-a48fe798be32)
+
 ## 安装运行
 
 ```bash
