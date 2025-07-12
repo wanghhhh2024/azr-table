@@ -18,6 +18,8 @@
   - 删除行/区域选中的行
 
 ## 截图
+<img width="774" height="440" alt="image" src="https://github.com/user-attachments/assets/60f2a5ce-0f6b-4d18-81ec-6c965f8c27e6" />
+
 ![chrome_jLknYodZcH](https://github.com/user-attachments/assets/0c097997-da5e-4445-9426-a48fe798be32)
 
 ## 安装运行
