@@ -2,33 +2,32 @@
 
 `azr-table` 是一个基于 Vue 和 Element Plus 的可编辑表格组件，并包含一些类似 Excel 的便捷操作
 
+## 功能点
 
-## Recommended IDE Setup
+* 区域选取
+   拖拽选中区域自动填充  
+* 复制/粘贴
+* 单元格编辑
+   - 文本框
+   - 下拉选择
+   - 级联选择   
+* 右键
+  - 向上/向下新增行
+  - 右键复制/粘贴
+  - 删除行/区域选中的行
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## 安装运行
 
-## Type Support for `.vue` Imports in TS
+```bash
+# 安装依赖
+pnpm install
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+# 如果 pnpm install 安装失败，尝试使用下面的命令安装依赖
+pnpm install --ignore-scripts
 
-## Customize configuration
+# 本地开发环境启动
+pnpm dev
 
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
+# 生产环境打包
+pnpm build
 ```
