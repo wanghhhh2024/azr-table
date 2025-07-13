@@ -3,9 +3,14 @@
     <el-scrollbar class="scrollbar-flex" height="550">
       <div class="scrollbar-flex-content">
         <el-table ref="experimentTable" :data="tableData" border
-          v-drag="{ tableRef: experimentTable, onEditCell: (key: any) => { onEditCell(key) } }">
+          v-drag="{ tableRef: experimentTable, onEditCell: (key: any) => { onEditCell(key) } },onCellChange=(row, prop, value) => {
+            tableData[row][prop] = value
+          }">
           <el-table-column type="selection" width="55" />
           <el-table-column type="index" width="50" />
+<!-- 
+          <el-table-column label="操作" width="100" prop="name">         
+          </el-table-column> -->
 
           <azr-Input-Column :width="120" :title="'Name'" :is-required="true" :show-fill="true" :tableData="tableData"
             :prop="'name'" v-model:editKey="editingCellKey">
@@ -72,7 +77,7 @@ const departments = ['tech', 'product', 'design', 'operation', 'sales'];
 const positions = ['junior', 'middle', 'senior', 'expert', 'manager', 'director'];
 const statuses = ['active', 'probation', 'resigned'];
 
-const tableData = ref(Array.from({ length: 20 }, (_, index) => ({
+const tableData = ref(Array.from({ length: 10 }, (_, index) => ({
   name: `${firstNames[index % firstNames.length]} ${lastNames[(index + 3) % lastNames.length]}`,
   age: 22 + (index % 40),
   sex: (index % 2) === 0 ? 'male' : 'female',

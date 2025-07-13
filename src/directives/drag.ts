@@ -1,10 +1,17 @@
 import type { DirectiveBinding } from 'vue'
-import { provide, ref } from 'vue'
+import { provide, ref, render, nextTick, createApp, } from 'vue'
+import { ElInput } from 'element-plus'
+
+import type { FunctionalComponent } from 'vue'
+import { h, withKeys } from 'vue'
+import type { Column, InputInstance } from 'element-plus'
+import azrInput from '@/components/azr-input.vue'
 
 interface TableDragBinding {
     tableRef?: any,
     onEditCell?: Function,
-    // onEmptyRow?: Function
+    // onEmptyRow?: Function,
+    onCellChange?: (row: number, prop: string, value: any) => void,
 }
 
 const menuItems = ref([
@@ -208,6 +215,37 @@ const dataUtils = {
     // }
 }
 
+type SelectionCellProps = {
+    value: string
+    intermediate?: boolean
+    onChange: (value: string) => void
+    onBlur: () => void
+    onKeydownEnter: () => void
+    forwardRef: (el: InputInstance) => void
+}
+
+
+const InputCell: FunctionalComponent<SelectionCellProps> = (props) => {
+    return h(ElInput, {
+        ref: props.forwardRef,
+        onInput: (val: string) => props.onChange(val),
+        onBlur: props.onBlur,
+        onKeydown: withKeys(props.onKeydownEnter, ['enter']),
+        modelValue: props.value,
+        size: 'small',
+        clearable: false,
+        style: {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            zIndex: '10',
+            border: 'none',
+            background: 'transparent',
+        }
+    })
+}
 
 const createContextMenu = (actions: any, cb: Function) => {
     const menu = document.createElement('div')
@@ -294,9 +332,22 @@ const initDirective = (el: HTMLElement, binding: DirectiveBinding<TableDragBindi
     })
 
     overlay.appendChild(corner)
+
+    const editCell = document.createElement('div')
+    overlay.className = 'edit-overlay'
+    Object.assign(overlay.style, {
+        position: 'absolute',
+        boxSizing: 'border-box',
+        borderRadius: '0px',
+        zIndex: '1000',
+        display: 'none'
+    })
+    overlay.append(editCell)
     el.after(overlay)
 
-    el._cellOverlay = { overlay, corner }
+
+
+    el._cellOverlay = { overlay, corner, editCell }
 }
 
 export const drag = {
@@ -376,7 +427,7 @@ export const drag = {
                         const column = columnProps.value[position.col]
                         if (!column || !column.prop || column.type === 'selection' || column.type === 'index') return
 
-                        updateEditingCell(position);
+                        updateEditingCell(cell, position);
                     }
                 }
             }
@@ -394,34 +445,92 @@ export const drag = {
             }
         }
 
-        const updateEditingCell = (position: { row: number; col: number }) => {
-            // if (!cellKey) return
-            // const [row, prop] = cellKey.split('-')
-            // const column = columnProps.value.find(col => col.prop === prop)
-            // if (!column) return
-
-            // // 设置编辑状态
-            // el._editingCellKey = cellKey
-            // el._editingCellColumn = column
-            // el._editingCellKey = `${position.row}-${column.prop}`
-
-            // const tableData = binding.value?.tableRef?.data || el._tableData || []
-            // tableData.forEach(row => {
-            //     if (!row._editFields) row._editFields = {}
-            // })
-
-            // const row = tableData[position.row]
-            // if (!row._editFields) row._editFields = {}
-            // row._editFields[column.prop] = true
-            // // Handle cell editing via the editKey pattern
-
-
-            // 如果有绑定的编辑回调，则调用
+        const updateEditingCell = (cell: HTMLElement,position: { row: number; col: number }) => {
+            const cellKey = position ? `${position.row}-${columnProps.value[position.col].prop}` : ''
             if (binding.value?.onEditCell) {
-                const cellKey = position ? `${position.row}-${columnProps.value[position.col].prop}` : ''
                 binding.value.onEditCell(cellKey)
             }
         }
+
+        const updateEditingCell2 = (cell: HTMLElement, position: { row: number; col: number }) => {
+
+            const column = columnProps.value[position.col]
+            const currentValue = el._tableData[position.row][column.prop]
+
+
+            const tableData = ref(binding.value?.tableRef?.data || el._tableData)
+
+            const inputContainer = document.createElement('div')
+            inputContainer.className = 'azt-cell-editor'
+            inputContainer.style.position = 'absolute'
+            inputContainer.style.top = '0'
+            inputContainer.style.left = '0'
+            inputContainer.style.width = '100%'
+            inputContainer.style.height = '100%'
+
+
+            // Ensure cell has position relative for absolute positioning of editor
+            // const originalPosition = cell.style.position
+            // cell.style.position = 'relative'
+
+            // Add container to cell
+            cell.appendChild(inputContainer)
+
+            const inputRef = ref()
+            const inputComponent = h(InputCell, {
+                forwardRef: (inputEl: any) => { inputRef.value = inputEl },
+                onChange: (val: string) => {
+                    if (binding.value?.onCellChange) {
+                        binding.value.onCellChange(position.row, column.prop, val);
+                    }
+
+                },
+                onBlur: () => {
+                    // Clean up when input loses focus
+                    inputContainer.remove()
+                    // cell.style.position = originalPosition
+                },
+                onKeydownEnter: () => {
+                    // Clean up when Enter is pressed
+                    inputContainer.remove()
+                    // cell.style.position = originalPosition
+                },
+                value: currentValue,
+                size: 'small',
+                clearable: false,
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    zIndex: '10'
+                }
+            })
+
+            // Render into the container instead of directly into the cell
+            render(inputComponent, inputContainer)
+            nextTick(() => {
+                if (inputRef.value) {
+                    inputRef.value.focus()
+                    inputRef.value.select()
+                }
+            })
+
+            // const inputComponent = h(azrInput, {
+            //     value: currentValue,
+            //     // forwardRef: (el) => { inputRef.value = el },
+            //     onChange: (val) => {
+            //         tableData[position.row][column.prop] = val
+            //     },
+            //     onKeydownEnter: () => { }
+            // })
+
+            // render(inputComponent, el._cellOverlay.editCell)
+            // renderEditCell(true);
+            //   Array.from(cell.querySelectorAll('.cell')).forEach((el) => {
+            //     el.style.display = 'none'
+            // })
+            // document.body.appendChild(inputContainer)
+        }
+
         const handleMouseMove = (event: MouseEvent) => {
             event.preventDefault() // 防止文本选择
             contextMenu.value.visible = false
@@ -434,7 +543,7 @@ export const drag = {
             // 获取当前单元格位置
             const currentPosition = domUtils.getCellPosition(currentCell)
 
-            updateEditingCell(null)
+            updateEditingCell(currentCell,null)
 
             //计算移动区域
             calculateSelectionRect(startCellPosition.value, currentPosition, selectionDirection.value)
@@ -708,6 +817,40 @@ export const drag = {
 
                 contextMenu.value = { visible: false, x: 0, y: 0, row: null, column: null, cell: null, }
                 // menuCreated = false
+            }
+        }
+
+        const renderEditCell = (visible) => {
+
+            //    inputContainer.style.position = 'absolute'
+            // inputContainer.style.top = `${cellRect.top}px`
+            // inputContainer.style.left = `${cellRect.left}px`
+            // inputContainer.style.width = `${cellRect.width}px`
+            // inputContainer.style.height = `${cellRect.height}px`
+            // inputContainer.style.borderRadius = '0px'
+            // inputContainer.style.zIndex = '1000'
+
+
+            const rect = selectionRect.value;
+            if (visible) {
+                const editCell = el._cellOverlay?.editCell
+                if (editCell) {
+                    editCell.style.display = ''
+                    editCell.style.left = (rect.left || 0) + 'px'
+                    editCell.style.top = (rect.top || 0) + 'px'
+                    editCell.style.width = (rect.width || 0) + 'px'
+                    editCell.style.height = (rect.height || 0) + 'px'
+                }
+            } else {
+                const overlay = el._cellOverlay?.editCell
+                if (overlay) {
+                    overlay.style.display = 'none'
+                }
+                // selArea.value = []
+                // isMouseDown.value = false
+                // selectionDirection.value = 'vertical' // 'horizontal' or 'vertical'
+                // startCellPosition.value = { row: -1, col: -1 }
+                // selectionRect.value = { visible: false, left: 0, top: 0, width: 0, height: 0 }
             }
         }
 
