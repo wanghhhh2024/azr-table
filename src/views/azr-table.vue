@@ -1,17 +1,17 @@
 <template>
   <div style="width: 1000px;">
-    <el-scrollbar class="scrollbar-flex" height="550">
+    <el-scrollbar class="scrollbar-flex" height="500" @end-reached="loadMore">
       <div class="scrollbar-flex-content">
-        <el-table ref="experimentTable" :data="tableData" border
-          v-drag="{ tableRef: experimentTable, onEditCell: (key: any) => { onEditCell(key) } },onCellChange=(row, prop, value) => {
-            tableData[row][prop] = value
-          }">
+        <el-table ref="experimentTable" :data="currentPageData" border
+          v-drag="{ tableRef: experimentTable, onEditCell: (key: any) => { onEditCell(key) } }">
           <el-table-column type="selection" width="55" />
           <el-table-column type="index" width="50" />
-<!-- 
+          <!-- 
           <el-table-column label="操作" width="100" prop="name">         
           </el-table-column> -->
-
+          <el-table-column type="index" width="50" prop="id">
+          
+          </el-table-column>
           <azr-Input-Column :width="120" :title="'Name'" :is-required="true" :show-fill="true" :tableData="tableData"
             :prop="'name'" v-model:editKey="editingCellKey">
           </azr-Input-Column>
@@ -63,7 +63,7 @@ import { ref, computed, provide } from "vue";
 import azrInputColumn from "@/components/azr-input-column.vue";
 import azrSelectColumn from "@/components/azr-select-column.vue";
 import { drag } from "@/directives/drag";
-
+import type { Column, ScrollbarDirection } from 'element-plus'
 const vDrag = {
   mounted: drag.mounted,
   updated: drag.updated,
@@ -77,7 +77,8 @@ const departments = ['tech', 'product', 'design', 'operation', 'sales'];
 const positions = ['junior', 'middle', 'senior', 'expert', 'manager', 'director'];
 const statuses = ['active', 'probation', 'resigned'];
 
-const tableData = ref(Array.from({ length: 10 }, (_, index) => ({
+const tableData = ref(Array.from({ length: 1000 }, (_, index) => ({
+  id: index + 1,
   name: `${firstNames[index % firstNames.length]} ${lastNames[(index + 3) % lastNames.length]}`,
   age: 22 + (index % 40),
   sex: (index % 2) === 0 ? 'male' : 'female',
@@ -125,6 +126,43 @@ const onEditCell = (key: any) => {
   editingCellKey.value = key;
 };
 
+const pageSize = ref(500);
+const pageIndex = ref(1);
+const total = ref(tableData.value.length);
+const pageCount = computed(() => Math.ceil(total.value / pageSize.value));
+// Start with first page of data
+const currentPageData = ref(tableData.value.slice(0, pageSize.value));
+const loadNextPage = () => {
+  if (pageIndex.value >= pageCount.value) {
+    return;
+  }
+  pageIndex.value++;
+  const start = (pageIndex.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  const nextPageData = tableData.value.slice(start, end);
+  // Append new data instead of replacing
+  currentPageData.value = [...currentPageData.value, ...nextPageData];
+};
+const loadPrevPage = () => {
+  if (pageIndex.value <= 1) {
+    return;
+  }
+  pageIndex.value--;
+
+  const start = (pageIndex.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  const prevPageData = tableData.value.slice(start, end);
+  // Prepend new data instead of replacing
+  currentPageData.value = [...prevPageData, ...currentPageData.value];
+};
+
+const loadMore = (direction: ScrollbarDirection) => {
+  if (direction === 'bottom') {
+    loadNextPage();
+  } else if (direction === 'top') {
+    loadPrevPage();
+  }
+}
 
 
 const handleFill = (property: any) => {

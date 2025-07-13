@@ -1,14 +1,20 @@
 <template>
   <el-table-column :width="width" :label="label" :prop="prop">
     <template #header>
-      <column-header :title="title" :tooltip="tooltip" :property="prop"
-        :is-required="props.isRequired" :show-fill="props.showFill" :show-clear="props.showClear"
-        :show-copy="props.showCopy" />
+      <column-header :title="title" :tooltip="tooltip" :property="prop" :is-required="props.isRequired"
+        :show-fill="props.showFill" :show-clear="props.showClear" :show-copy="props.showCopy" />
     </template>
     <template #default="{ row, $index }">
-      <el-input v-if="`${$index}-${prop}` === editKey" ref="inputRef" :placeholder="props.placeholder"
-        v-model="row[prop]" :key="`${$index}-${prop}`" :data-cell-key="`${$index}-${prop}`" @blur="onBlur">
-      </el-input>
+      <!-- <el-input v-if="`${$index}-${prop}` === editKey" ref="inputRef" :placeholder="props.placeholder"
+        v-model.lazy="row[prop]" :key="`${$index}-${prop}`" :data-cell-key="`${$index}-${prop}`" @blur="onBlur">
+      </el-input> -->
+      <div class="el-input" v-if="`${$index}-${prop}` === editKey" ref="inputRef" style="height: 100%;width: 100%;">
+        <div class="el-input__wrapper" tabindex="-1">
+          <input class="el-input__inner" type="text" :data-cell-key="`${$index}-${prop}`" autocomplete="off"
+            tabindex="0" :placeholder="props.placeholder" :value="row[prop]"
+            @input="event => onInput(event.target.value, row, prop)">
+        </div>
+      </div>
       <div class="flex-container" v-else-if="row[prop]">
         <span class="truncate-text">{{ row[prop] }}</span>
         <slot name="icon" v-bind="{ row, $index }"></slot>
@@ -20,7 +26,6 @@
 <script setup lang="ts">
 import { ref, defineProps, defineEmits, defineModel, watch, nextTick } from 'vue'
 import columnHeader from './column-header.vue'
-
 const props = defineProps({
   prop: {
     type: String || Boolean,
@@ -88,32 +93,51 @@ watch(
   (newValue) => {
     if (newValue) {
       nextTick(() => {
-        if (inputRef.value) {
-          inputRef.value.focus && inputRef.value.focus()
-          inputRef.value.select && inputRef.value.select()
+        // if (inputRef.value) {
+        //   inputRef.value.focus && inputRef.value.focus()
+        //   inputRef.value.select && inputRef.value.select()
+        // }
+        const input = document.querySelector(`[data-cell-key="${newValue}"]`)
+        if (input) {
+          input.focus && input.focus()
+          input.select && input.select()
         }
-        // const input = document.querySelector(`[data-cell-key="${newValue}"]`)
-        // if (input) input.focus()
       })
     }
   },
 )
+const inputValue = defineModel('data');
 
-const onBlur = (val) => {
-  editKey.value = ''
-}
+const debounce = (fn:Function, delay = 300) => {
+  let timer = null;
+  return function (...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+    }, delay);
+  };
+};
+
+const onInput = debounce((value, row, prop) => {
+  row[prop] = value;
+}, 100);
+
+// const onBlur = (value) => {
+//   // if(value === originalValue.value) return;
+//   emit('blur', { newValue: value, oldValue: originalValue.value });
+// };
 </script>
 <style lang="scss">
 .placeholder {
   color: var(--el-text-color-placeholder);
 }
 
-.flex-container {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  // gap: 5px;
-}
+// .flex-container {
+//   display: flex;
+//   align-items: center;
+//   width: 100%;
+//   // gap: 5px;
+// }
 
 .opt-icon {
   width: 50px;

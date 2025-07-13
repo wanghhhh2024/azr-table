@@ -1,5 +1,5 @@
 import type { DirectiveBinding } from 'vue'
-import { provide, ref, render, nextTick, createApp, } from 'vue'
+import { provide, ref, render, nextTick, createApp,defineModel } from 'vue'
 import { ElInput } from 'element-plus'
 
 import type { FunctionalComponent } from 'vue'
@@ -228,7 +228,9 @@ type SelectionCellProps = {
 const InputCell: FunctionalComponent<SelectionCellProps> = (props) => {
     return h(ElInput, {
         ref: props.forwardRef,
-        onInput: (val: string) => props.onChange(val),
+        onInput: (val: string) => {
+              props.onChange(val);  
+        },
         onBlur: props.onBlur,
         onKeydown: withKeys(props.onKeydownEnter, ['enter']),
         modelValue: props.value,
@@ -454,6 +456,8 @@ export const drag = {
 
         const updateEditingCell2 = (cell: HTMLElement, position: { row: number; col: number }) => {
 
+            if(!position)
+                return;
             const column = columnProps.value[position.col]
             const currentValue = el._tableData[position.row][column.prop]
 
@@ -481,7 +485,7 @@ export const drag = {
                 forwardRef: (inputEl: any) => { inputRef.value = inputEl },
                 onChange: (val: string) => {
                     if (binding.value?.onCellChange) {
-                        binding.value.onCellChange(position.row, column.prop, val);
+                        binding.value.onCellChange({row:position.row,prop: column.prop,value: val});
                     }
 
                 },
@@ -817,40 +821,6 @@ export const drag = {
 
                 contextMenu.value = { visible: false, x: 0, y: 0, row: null, column: null, cell: null, }
                 // menuCreated = false
-            }
-        }
-
-        const renderEditCell = (visible) => {
-
-            //    inputContainer.style.position = 'absolute'
-            // inputContainer.style.top = `${cellRect.top}px`
-            // inputContainer.style.left = `${cellRect.left}px`
-            // inputContainer.style.width = `${cellRect.width}px`
-            // inputContainer.style.height = `${cellRect.height}px`
-            // inputContainer.style.borderRadius = '0px'
-            // inputContainer.style.zIndex = '1000'
-
-
-            const rect = selectionRect.value;
-            if (visible) {
-                const editCell = el._cellOverlay?.editCell
-                if (editCell) {
-                    editCell.style.display = ''
-                    editCell.style.left = (rect.left || 0) + 'px'
-                    editCell.style.top = (rect.top || 0) + 'px'
-                    editCell.style.width = (rect.width || 0) + 'px'
-                    editCell.style.height = (rect.height || 0) + 'px'
-                }
-            } else {
-                const overlay = el._cellOverlay?.editCell
-                if (overlay) {
-                    overlay.style.display = 'none'
-                }
-                // selArea.value = []
-                // isMouseDown.value = false
-                // selectionDirection.value = 'vertical' // 'horizontal' or 'vertical'
-                // startCellPosition.value = { row: -1, col: -1 }
-                // selectionRect.value = { visible: false, left: 0, top: 0, width: 0, height: 0 }
             }
         }
 
